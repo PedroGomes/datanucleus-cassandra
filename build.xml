@@ -54,7 +54,7 @@
   		 	 <fileset dir="${src.dir}" includes="**/*.properties"/>
 		</copy>
 		     <copy todir="${classes.dir}/META-INF">
-  		<fileset dir="${basedir}" includes="LICENSE.txt"/>
+  		<fileset dir="${basedir}" includes="LICENSE.txt,NOTICE.txt"/>
      </copy>
     </target>
 
