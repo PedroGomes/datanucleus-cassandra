@@ -34,7 +34,7 @@ Then type ant or ant dist.
 	
 Get the JDO sample in Datanucleus at:
 
-	<a href="http://sourceforge.net/projects/datanucleus/files/"> http://sourceforge.net/projects/datanucleus/files/ </a>
+	http://sourceforge.net/projects/datanucleus/files/
 
 Then:
 
