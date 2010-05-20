@@ -36,8 +36,8 @@ http://sourceforge.net/projects/datanucleus/files/
 -In the datanucleus.properties add/edit:
    javax.jdo.option.ConnectionURL=cassandra:ORMTest://localhost:9160   (*)
 	
-   datanucleus.cassandra.replicaPlacementStrategy=org.apache.cassandra.locator.RackUnawareStrategy (+)
-   datanucleus.cassandra.replicationFactor=1 (+)
+   datanucleus.cassandra.replicaPlacementStrategy=org.apache.cassandra.locator.RackUnawareStrategy (+) </br>
+   datanucleus.cassandra.replicationFactor=1 (+) /0
    datanucleus.cassandra.endPointSnitch = org.apache.cassandra.locator.EndPointSnitch (+)
    datanucleus.metadata.validate=false 
    datanucleus.autoCreateSchema=true 
