@@ -17,6 +17,7 @@ This plugin allows under the specification that can be found in the Datanucleus 
 Data-store code isolation will be improved however, to allow  other version to be easily plugged. 
 
 #Required Libs
+To build the datanucleus simply type ant or ant dist, after you placed the following libs in a folder named lib. 
 
 -apache-cassandra-0.6.1.jar <br>
 -libthrift-r917130.jar <br>
