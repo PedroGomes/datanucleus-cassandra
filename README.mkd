@@ -18,9 +18,9 @@ DataStore code isolation will be improved however, to allow  other version to be
 
 #Required Libs
 
--apache-cassandra-0.6.1.jar
--libthrift-r917130.jar
--datanucleus-core-2.1.0-m2.jar (*)
+-apache-cassandra-0.6.1.jar \n
+-libthrift-r917130.jar \n
+-datanucleus-core-2.1.0-m2.jar (*) \n
 
 (*) Due to API issues, I chose to use the new core version of datanucleus,  this however demands that you compile and generate a jar for the new JDO API, when using the plugin. Sources under:
 http://www.datanucleus.org/downloads/maven2/javax/jdo/jdo2-api/2.3-ec/
@@ -40,9 +40,9 @@ http://sourceforge.net/projects/datanucleus/files/
    datanucleus.metadata.validate=false 
    datanucleus.autoCreateSchema=true 
 
-Then enhance and run the tutorial, and it will function as expected, I think…
+Then enhance and run the tutorial, and it will function as expected, I think...
 
-(*)The connection url follows the pattern: cassandra:keySpace://hostaname:port,hostname:port…
+(*)The connection url follows the pattern: cassandra:keySpace://hostaname:port,hostname:port,...
    cassandra:keySpace://hostname:port,ring:default_port can also be used, where the plugin is responsible for the discover of other nodes using the default port.
 
 (**)Used to generate the schema, that for now is only the generation of a file as said above. 
