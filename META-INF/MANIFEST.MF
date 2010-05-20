@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Datanucleus_cassandra
+Bundle-SymbolicName: org.datanucleus.cassandra;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: org.datanucleus;bundle-version="2.1.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: lib/apache-cassandra-0.6.1.jar,
+ lib/libthrift-r917130.jar,
+ lib/datanucleus-core-2.1.0-m2.jar,
+ .

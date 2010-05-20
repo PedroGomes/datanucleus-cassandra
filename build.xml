@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project name="datanucleus-cassandra" default="dist" basedir=".">
+    <description>
+        An cassandra plugin to the java persistence tool, datanucleus.
+    </description>
+  <!-- global properties for this build -->
+  <property name="src.dir" location="src/"/>
+  <property name="dist"  location="target"/>
+  <property name="lib.dir" value="lib"/>
+   <!-- compile properties -->
+  <property name="classes.dir" value="target/classes"/>
+
+<!--================================================================
+    Classpath properties
+=================================================================-->
+
+    <!-- the classpath for running -->
+    <path id="lib.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <pathelement location="${classes.dir}"/>
+        <pathelement location="${basedir}"/>
+    </path>
+
+    <!-- the classpath for the compile -->
+    <path id="compile.classpath">
+        <pathelement location="${classes.dir}"/>
+        <path refid="lib.classpath"/>
+    </path>
+
+    <path id="build.files">
+        <pathelement location="${classes.dir}"/>
+        
+    </path>
+
+
+  <target name="prepare">
+    <!-- Create the time stamp -->
+   <tstamp/>
+     <mkdir dir="${classes.dir}"/>
+  </target>
+
+    <target name="compile" depends="clean,prepare">
+        <echo message="==================================================================="/>
+        <echo message="Compile configuration:"/>
+        <echo message="java.dir       = ${src.dir}"/>
+        <echo message="classes.dir    = ${classes.dir}"/>
+        <echo message="==================================================================="/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="compile.classpath">
+            <include name="**/*.java"/>
+        </javac>
+        <copy todir="${classes.dir}">
+  		 	 <fileset dir="${src.dir}" includes="**/*.properties"/>
+		</copy>
+		     <copy todir="${classes.dir}/META-INF">
+  		<fileset dir="${basedir}" includes="LICENSE.txt"/>
+     </copy>
+    </target>
+
+  <target name="dist" depends="compile"
+        description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}"/>
+
+    <jar jarfile="${dist}/datanucleus-cassandra-0.1.jar" manifest="${basedir}/META-INF/MANIFEST.MF">
+
+     <fileset dir="${classes.dir}"/>
+     <fileset dir= "${basedir}">
+         <include name="plugin.xml"/>
+     </fileset> 
+
+     
+    </jar>
+
+  </target>
+
+
+    <target name="clean">
+        <delete includeEmptyDirs="true" dir="${dist}"/>     
+    </target>
+
+</project>

@@ -1,0 +1,53 @@
+# Propose:
+
+A simple plugin for cassandra to the java persistence platform Datanucleus. 
+http://www.datanucleus.org/project/download.html
+
+# About: 
+
+This plugin allows under the specification that can be found in the Datanucleus site to simplify the persistence of java objects into cassandra.
+
+-It allows in the moment the persistence of simple attributes, one-one relations e one-many and many-many relations through collections.  
+
+-It does not support JDOQL, and I didn't test it for JPA
+
+-It creates a datanucleus.schema every time some element is missing in Casssandra schema, until Cassandra allows dynamic changes to it.  
+
+-It is made to function with Cassandra-0.6, under Thrifht interface.
+DataStore code isolation will be improved however, to allow  other version to be easily plugged. 
+
+#Required Libs
+
+-apache-cassandra-0.6.1.jar
+-libthrift-r917130.jar
+-datanucleus-core-2.1.0-m2.jar (*)
+
+(*) Due to API issues, I chose to use the new core version of datanucleus,  this however demands that you compile and generate a jar for the new JDO API, when using the plugin. Sources under:
+http://www.datanucleus.org/downloads/maven2/javax/jdo/jdo2-api/2.3-ec/
+
+# Use example:
+	
+Following the JDO sample presented in Datanucleus:
+http://sourceforge.net/projects/datanucleus/files/
+
+-Remove the JDOQL tests from Main.java.
+-In the datanucleus.properties add/edit:
+   javax.jdo.option.ConnectionURL=cassandra:ORMTest://localhost:9160   (*)
+ 	
+   datanucleus.cassandra.replicaPlacementStrategy=org.apache.cassandra.locator.RackUnawareStrategy (**)
+   datanucleus.cassandra.replicationFactor=1 (**)
+   datanucleus.cassandra.endPointSnitch = org.apache.cassandra.locator.EndPointSnitch (**)
+   datanucleus.metadata.validate=false 
+   datanucleus.autoCreateSchema=true 
+
+Then enhance and run the tutorial, and it will function as expected, I think…
+
+(*)The connection url follows the pattern: cassandra:keySpace://hostaname:port,hostname:port…
+   cassandra:keySpace://hostname:port,ring:default_port can also be used, where the plugin is responsible for the discover of other nodes using the default port.
+
+(**)Used to generate the schema, that for now is only the generation of a file as said above. 
+
+
+
+
+

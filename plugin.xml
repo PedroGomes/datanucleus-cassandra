@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin id="org.datanucleus.cassandra" >
+   <extension
+         point="org.datanucleus.store_manager">
+      <store-manager
+            class-name="org.datanucleus.store.cassandra.CassandraStoreManager"
+            key="cassandra"
+            url-key="cassandra">
+      </store-manager>
+   </extension>
+   <extension
+         point="org.datanucleus.store_connectionfactory">
+      <connectionfactory
+            class-name="org.datanucleus.store.cassandra.CassandraConnectionFactory"
+            datastore="cassandra"
+            name="cassandra"
+            transactional="true">
+      </connectionfactory>
+   </extension>
+      <extension
+         point="org.datanucleus.store_connectionfactory">
+      <connectionfactory
+            class-name="org.datanucleus.store.cassandra.CassandraConnectionFactory"
+            datastore="cassandra"
+            name="cassandra"
+            transactional="false">
+      </connectionfactory>
+   </extension>
+</plugin>
+
