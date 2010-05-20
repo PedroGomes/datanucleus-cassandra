@@ -18,10 +18,8 @@ DataStore code isolation will be improved however, to allow  other version to be
 
 #Required Libs
 
--apache-cassandra-0.6.1.jar 
-
--libthrift-r917130.jar 
-
+-apache-cassandra-0.6.1.jar <br>
+-libthrift-r917130.jar <br>
 -datanucleus-core-2.1.0-m2.jar (*)  
 
 (*) Due to API issues, I chose to use the new core version of datanucleus,  this however demands that you compile and generate a jar for the new JDO API, when using the plugin. Sources under:
@@ -32,7 +30,7 @@ http://www.datanucleus.org/downloads/maven2/javax/jdo/jdo2-api/2.3-ec/
 Following the JDO sample presented in Datanucleus:
 http://sourceforge.net/projects/datanucleus/files/
 
--Remove the JDOQL tests from Main.java.
+-Remove the JDOQL tests from Main.java.<br>
 -In the datanucleus.properties add/edit:
 
    javax.jdo.option.ConnectionURL=cassandra:ORMTest://localhost:9160   (*)
