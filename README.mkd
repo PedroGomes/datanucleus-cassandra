@@ -33,7 +33,7 @@ http://sourceforge.net/projects/datanucleus/files/
 -Remove the JDOQL tests from Main.java.
 -In the datanucleus.properties add/edit:
    javax.jdo.option.ConnectionURL=cassandra:ORMTest://localhost:9160   (*)
- 	
+	
    datanucleus.cassandra.replicaPlacementStrategy=org.apache.cassandra.locator.RackUnawareStrategy (**)
    datanucleus.cassandra.replicationFactor=1 (**)
    datanucleus.cassandra.endPointSnitch = org.apache.cassandra.locator.EndPointSnitch (**)
