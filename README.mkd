@@ -24,7 +24,7 @@ DataStore code isolation will be improved however, to allow  other version to be
 
 ----------------
 (*) Due to API issues, I chose to use the new core version of datanucleus,  this however demands that you compile and generate a jar for the new JDO API, when using the plugin. Sources under:
-[http://www.datanucleus.org/downloads/maven2/javax/jdo/jdo2-api/2.3-ec/]
+<a href="http://www.datanucleus.org/downloads/maven2/javax/jdo/jdo2-api/2.3-ec/">
 
 # Use example:
 	
@@ -45,7 +45,7 @@ Then enhance and run the tutorial, and it will function as expected, I think...
 
 -----------------
 (*)The connection URL follows the pattern: cassandra:keySpace://hostaname:port,hostname:port,...
-   cassandra:keySpace://hostname:port,ring:default_port can also be used, where the plugin is responsible for the discover of other nodes using the default port.
+   cassandra:keySpace://hostname:port,ring:default_port can also be used, where the plugin is responsible for the discover of other nodes using the default port. <br>
 (+)Used to generate the schema, that for now is only the generation of a file as said above. 
 
 
