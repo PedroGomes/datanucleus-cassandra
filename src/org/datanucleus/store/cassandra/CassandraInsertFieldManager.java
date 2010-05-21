@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.cassandra.thrift.Column;
@@ -33,13 +35,17 @@ import org.apache.cassandra.thrift.Mutation;
 import org.apache.cassandra.thrift.SlicePredicate;
 import org.datanucleus.ClassLoaderResolver;
 import org.datanucleus.StateManager;
+import org.datanucleus.api.ApiAdapter;
 import org.datanucleus.exceptions.NucleusException;
 import org.datanucleus.metadata.AbstractClassMetaData;
 import org.datanucleus.metadata.AbstractMemberMetaData;
+import org.datanucleus.metadata.MapMetaData;
+import org.datanucleus.metadata.MetaDataManager;
 import org.datanucleus.metadata.Relation;
 import org.datanucleus.store.ExecutionContext;
 import org.datanucleus.store.ObjectProvider;
 import org.datanucleus.store.fieldmanager.AbstractFieldManager;
+
 
 //TODO isolate cassandra operations...
 public class CassandraInsertFieldManager extends AbstractFieldManager {
@@ -342,7 +348,8 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 					List<Object> mapping = new ArrayList<Object>();
 
-					for (Object c : (Collection) value) {
+					for (Object c : (Collection) value) {	
+						
 						Object persisted = context.persistObjectInternal(c,
 								objectProvider, -1, StateManager.PC);
 						Object valueId = context.getApiAdapter()
@@ -370,9 +377,74 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 						throw new NucleusException(e.getMessage(), e);
 					}
 				}
+				 else if (value instanceof Map)
+                 {
+                     // Process all keys, values of the Map that are PC
+					 
+					 Map<Object,Object> mapping = new TreeMap<Object,Object>();
+					 
+                     Map map = (Map)value;
+                     ApiAdapter api = context.getApiAdapter();
+                     Set keys = map.keySet();
+                     Iterator iter = keys.iterator();
+                     while (iter.hasNext())
+                     {
+                         Object mapKey = iter.next();
+                         Object key = null;
+                         
+                         if (api.isPersistable(mapKey))
+                         {                      		
+     						Object persisted = context.persistObjectInternal(mapKey,
+     								objectProvider, -1, StateManager.PC);
+     						key = context.getApiAdapter().getIdForObject(persisted);
+                         }
+                         else{                        	 
+                        	key =  mapKey;
+                         }
+                         
+                         Object mapValue =  map.get(key);
+                         Object key_value = null;
+                         
+                         if (api.isPersistable(mapValue))
+                         {
+                           
+                        	 Object persisted = context.persistObjectInternal(mapValue,
+      								objectProvider, -1, StateManager.PC);
+                        	 key_value = context.getApiAdapter().getIdForObject(persisted);              
+                         }
+                         else{                      	 
+                        	 key_value = mapValue;
+                         }
+                         
+                          mapping.put(key, key_value);
+                         
+                     }
+
+					try {
+
+						ByteArrayOutputStream bos = new ByteArrayOutputStream();
+						ObjectOutputStream oos = new ObjectOutputStream(bos);
+						oos.writeObject(mapping);
+
+						Mutation mutation = new Mutation();
+						ColumnOrSuperColumn columnOrSuperColumn = new ColumnOrSuperColumn();
+						Column column = new Column(columnName.getBytes(), bos
+								.toByteArray(), System.currentTimeMillis());
+						columnOrSuperColumn.setColumn(column);
+						mutation.setColumn_or_supercolumn(columnOrSuperColumn);
+						mutations.add(mutation);
+
+						oos.close();
+						bos.close();
+					} catch (IOException e) {
+						throw new NucleusException(e.getMessage(), e);
+					}
+				}
 				return;
 			}
 
+			//normal object;
+			
 			try {
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				ObjectOutputStream oos = new ObjectOutputStream(bos);

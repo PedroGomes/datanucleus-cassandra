@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-**********************************************************************/
+ **********************************************************************/
 
 package org.datanucleus.store.cassandra;
 
@@ -22,13 +22,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-
 
 import org.apache.cassandra.thrift.ColumnOrSuperColumn;
 import org.datanucleus.ClassLoaderResolver;
+import org.datanucleus.StateManager;
+import org.datanucleus.api.ApiAdapter;
 import org.datanucleus.exceptions.NucleusException;
 import org.datanucleus.metadata.AbstractClassMetaData;
 import org.datanucleus.metadata.AbstractMemberMetaData;
@@ -257,11 +260,13 @@ public class CassandraFetchFieldManager extends AbstractFieldManager {
 				|| relationType == Relation.ONE_TO_MANY_UNI) {
 
 			MetaDataManager mmgr = context.getMetaDataManager();
-			String elementClassName = fieldMetaData.getCollection()
-					.getElementClassMetaData(clr, mmgr).getFullClassName();
+
 
 			if (fieldMetaData.hasCollection()) {
 
+				String elementClassName = fieldMetaData.getCollection().getElementType();
+
+				
 				List<Object> mapping = (List<Object>) value;
 				Collection<Object> collection = new ArrayList<Object>();
 				for (Object id : mapping) {
@@ -271,6 +276,48 @@ public class CassandraFetchFieldManager extends AbstractFieldManager {
 					collection.add(element);
 				}
 				value = collection;
+			}
+
+			else if (fieldMetaData.hasMap()) {
+				// Process all keys, values of the Map that are PC
+
+				String key_elementClassName = fieldMetaData.getMap().getKeyType();
+				String value_elementClassName = fieldMetaData.getMap().getValueType();
+				
+				Map<Object, Object> mapping = new TreeMap<Object, Object>();
+
+				Map map = (Map) value;
+				ApiAdapter api = context.getApiAdapter();
+				
+				Set keys = map.keySet();
+				Iterator iter = keys.iterator();
+				while (iter.hasNext()) {
+					Object mapKey = iter.next();
+					Object key = null;
+
+					if (mapKey instanceof javax.jdo.identity.SingleFieldIdentity) {
+						key = context.findObject(mapKey, true, false,
+								key_elementClassName);
+
+					} else {
+						key = mapKey;
+					}
+
+					Object mapValue = map.get(key);
+					Object key_value = null;
+
+					if (mapValue instanceof javax.jdo.identity.SingleFieldIdentity) {
+
+						key_value = context.findObject(mapValue, true, false,
+								value_elementClassName);
+					} else {
+						key_value = mapValue;
+					}
+
+					mapping.put(key, key_value);
+				}
+
+				value = mapping;
 			}
 		}
 
