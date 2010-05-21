@@ -39,6 +39,7 @@ Get the JDO sample in Datanucleus at:
 Then:
 
 - Remove the JDOQL tests from Main.java.<br>
+- Define the primary key for each class, as the native strategy is not supported. 
 - In the datanucleus.properties add/edit:
 
    javax.jdo.option.ConnectionURL=cassandra:ORMTest://localhost:9160   (*)
