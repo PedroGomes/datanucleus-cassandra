@@ -8,7 +8,7 @@ Java object persistence in <a href="http://cassandra.apache.org/">Cassandra</a>.
 
 The current status is as follows:
 
-- It allows persistence of simple attributes, one-to-one relations, one-to-many and many-to-many relations through collections.  
+- It allows persistence of simple attributes, one-to-one relations, one-to-many and many-to-many relations through collections and maps.  
  
 - It creates a datanucleus.schema every time some element is missing in Cassandra schema, until Cassandra allows dynamic changes to it.
 
