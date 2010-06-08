@@ -27,5 +27,15 @@
             transactional="false">
       </connectionfactory>
    </extension>
+      <extension
+            point="org.datanucleus.store_query_query">      
+            <query class-name="org.datanucleus.store.cassandra.query.JDOQLQuery" datastore="cassandra" name="javax.jdo.query.JDOQL"/>
+            <query class-name="org.datanucleus.store.cassandra.query.JDOQLQuery" datastore="cassandra" name="JDOQL"/>
+         <query
+               class-name="org.datanucleus.store.cassandra.query.JDOQLQuery"
+               datastore="cassandra"
+               name="cassandra">
+         </query>
+      </extension>
 </plugin>
 

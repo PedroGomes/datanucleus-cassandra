@@ -28,9 +28,11 @@ import org.datanucleus.store.cassandra.CassandraUtils;
 
 public class CassandraQuery {
 
+	public static int search_slice_ratio = 1000; //should come from the properties  
+
 	static List getObjectsOfCandidateType(final ExecutionContext ec,
 			final CassandraManagedConnection mconn, Class candidateClass,
-			boolean subclasses, boolean ignoreCache) {
+			boolean subclasses, boolean ignoreCache,long fromInclNo , long toExclNo) {
 		List results = new ArrayList();
 
 		try {
@@ -55,8 +57,40 @@ public class CassandraQuery {
 			}
 			slice_predicate.setColumn_names(column_names);
 
-			List<KeySlice> result = c.get_range_slice(keyspace, parent,
-					slice_predicate, "", "", 3000, ConsistencyLevel.QUORUM);
+			String last_key = "";
+			int number_keys =0;
+            boolean terminated = false;
+            
+            
+            
+		    long limit = toExclNo;//(toExclNo<0) ? -1 : (toExclNo-1);             
+            List<KeySlice> result = new ArrayList<KeySlice>();
+
+            while (!terminated) {
+                List<KeySlice> keys = c.get_range_slice(keyspace, parent, slice_predicate, last_key, "", search_slice_ratio, ConsistencyLevel.QUORUM);
+               
+                if (!keys.isEmpty()) {
+                    last_key = keys.get(keys.size() - 1).key;
+                }
+                
+                for (KeySlice key : keys) {
+                	if(!key.getColumns().isEmpty()){
+                		number_keys++;
+						if(number_keys>fromInclNo){
+						result.add(key);
+						}
+						
+                	}
+                	if (number_keys >= limit) {
+                        terminated = true;
+                        break;
+                    }
+                	
+                }
+                if (keys.size() < search_slice_ratio) {
+                    terminated = true;
+                } 
+            }
 
 			Iterator<KeySlice> iterator = result.iterator();
 
@@ -74,29 +108,14 @@ public class CassandraQuery {
 								}
 
 								@Override
-								public void fetchNonLoadedFields(
-										ObjectProvider sm) {
-									sm.replaceNonLoadedFields(acmd
-											.getAllMemberPositions(),
-											new CassandraFetchFieldManager(
-													acmd, sm, keySlice
-															.getColumns()));
-
+								public void fetchNonLoadedFields(ObjectProvider sm) {
+									sm.replaceNonLoadedFields(acmd.getAllMemberPositions(),new CassandraFetchFieldManager(acmd, sm, keySlice.getColumns()));
 								}
 
 								@Override
 								public void fetchFields(ObjectProvider sm) {
-									sm.replaceFields(acmd
-											.getPKMemberPositions(),
-											new CassandraFetchFieldManager(
-													acmd, sm, keySlice
-															.getColumns()));
-									sm.replaceFields(acmd
-											.getBasicMemberPositions(clr, ec
-													.getMetaDataManager()),
-											new CassandraFetchFieldManager(
-													acmd, sm, keySlice
-															.getColumns()));
+									sm.replaceFields(acmd.getPKMemberPositions(),new CassandraFetchFieldManager(acmd, sm, keySlice.getColumns()));
+									sm.replaceFields(acmd.getBasicMemberPositions(clr, ec.getMetaDataManager()),new CassandraFetchFieldManager(acmd, sm, keySlice.getColumns()));
 
 								}
 							}, ignoreCache, true));
