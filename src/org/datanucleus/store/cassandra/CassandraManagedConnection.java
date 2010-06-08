@@ -88,7 +88,7 @@ public class CassandraManagedConnection extends AbstractManagedConnection {
 		return client;
 	}
 
-	public Client getCassandraClient() {
+	private Client getCassandraClient() {
 
 		boolean openClient = false;
 		Client cl = null;
