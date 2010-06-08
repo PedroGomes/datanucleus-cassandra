@@ -46,8 +46,8 @@
         <echo message="Compile configuration:"/>
         <echo message="java.dir       = ${src.dir}"/>
         <echo message="classes.dir    = ${classes.dir}"/>
-        <echo message="==================================================================="/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="compile.classpath">
+        <echo message="==================================================================="/>     
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="compile.classpath" debug="on" debuglevel="lines,vars,source">
             <include name="**/*.java"/>
         </javac>
         <copy todir="${classes.dir}">
