@@ -18,7 +18,7 @@ The current status is as follows:
 
 - JPA is not fully functional at the time (work in progress).
 
-- Basic schema creation tool(beta). <a href=http://wiki.github.com/PedroGomes/datanucleus-cassandra/schema-creation/>Schema creation</a>
+- Basic schema creation tool(beta). <a href=http://wiki.github.com/PedroGomes/datanucleus-cassandra/wikis/schema-creation>Schema creation</a>
 
 # Compiling
 
