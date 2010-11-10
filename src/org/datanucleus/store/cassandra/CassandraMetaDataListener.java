@@ -18,20 +18,37 @@ limitations under the License.
 package org.datanucleus.store.cassandra;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.datanucleus.exceptions.NucleusException;
 import org.datanucleus.metadata.AbstractClassMetaData;
+import org.datanucleus.metadata.AbstractMemberMetaData;
+import org.datanucleus.metadata.ColumnMetaData;
 import org.datanucleus.metadata.IdentityType;
+import org.datanucleus.metadata.IndexMetaData;
 import org.datanucleus.metadata.InvalidMetaDataException;
 import org.datanucleus.metadata.MetaDataListener;
 
 import org.datanucleus.util.Localiser;
 
+
 public class CassandraMetaDataListener implements MetaDataListener{
 
 	 /** Localiser for messages. */
     protected static final Localiser LOCALISER = Localiser.getInstance(
-        "org.datanucleus.store.hbase.Localisation", CassandraStoreManager.class.getClassLoader());
+        "org.datanucleus.store.cassandra.Localisation", CassandraStoreManager.class.getClassLoader());
+	
+    /**Tod code*/
+    
+	private static ConcurrentMap<AbstractMemberMetaData, String> fieldToIndexNames = new ConcurrentHashMap<AbstractMemberMetaData, String>();
+    
+	private static ConcurrentMap<AbstractMemberMetaData, String> fieldToColumnNames = new ConcurrentHashMap<AbstractMemberMetaData, String>();
+	
+	//A null place holder for the cached values
+	private static final String NULL = "\uffff\uffff";
+	
+	/**Tod code*/
 	
     private CassandraStoreManager storeManager;
     
@@ -56,8 +73,39 @@ public class CassandraMetaDataListener implements MetaDataListener{
 				throw new NucleusException(e.getMessage(), e);
 			}
 	    }	
+	    
+	    //load index info from the class to elements  
+	    IndexMetaData[] im = cmd.getIndexMetaData();
+	    for(IndexMetaData indx : im){ //for all indexes
+	    	
+	    	AbstractMemberMetaData[] clm = indx.getMemberMetaData();
+	    	if(clm.length>1){
+	    		//Only one column per index 
+	            throw new InvalidMetaDataException(LOCALISER,"Cassandra.Index.multipleColumns");	    		
+	    	}
+	    	String index_member_name = clm[0].getName();
+	    	if(cmd.hasMember(index_member_name)){
+		    	AbstractMemberMetaData md = cmd.getMetaDataForMember(index_member_name);
+		    	IndexMetaData idm = new IndexMetaData();
+		    	
+		    	String table =  indx.getTable();
+		    	
+		    	if(table ==null){
+		    		String class_name = cmd.getName();
+		    		table =	class_name + "_index";
+		    		
+		    	}
+		    	
+		    	idm.setTable(table);
+		    	idm.setName(indx.getName());
+		    	idm.setUnique(indx.isUnique());
+		    	md.setIndexMetaData(idm);
+	    	}
+	    	else{		
+	            throw new InvalidMetaDataException(LOCALISER,"Cassandra.unknowMember",index_member_name);	    		
+	    	}
+
+	    }	   
 	}
-	
-	
 	
 }
