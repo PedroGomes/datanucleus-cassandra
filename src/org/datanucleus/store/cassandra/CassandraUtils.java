@@ -22,9 +22,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
+import org.apache.cassandra.thrift.Mutation;
 import org.apache.cassandra.thrift.NotFoundException;
 import org.apache.cassandra.thrift.Cassandra.Client;
 import org.apache.thrift.TException;
@@ -69,6 +73,24 @@ public class CassandraUtils {
 		}
 		return columnName;
 	}
+	
+	public static String getQualifierName(AbstractMemberMetaData ammd) {
+		String columnName = null;
+
+		// Try the first column if specified
+		ColumnMetaData[] colmds = ammd.getColumnMetaData();
+		if (colmds != null && colmds.length > 0) {
+			columnName = colmds[0].getName();
+		}
+		if (columnName == null) {
+			// Fallback to the field/property name
+			columnName = ammd.getName();
+		}
+		if (columnName.indexOf(":") > -1) {
+			columnName = columnName.substring(columnName.indexOf(":") + 1);
+		}
+		return columnName;
+	}
 
 	public static String getFamilyName(AbstractClassMetaData acmd) {
 		if (acmd.getTable() != null) {
@@ -88,6 +110,31 @@ public class CassandraUtils {
 
 	public static String ObjectToString(Object object) throws IOException {
 
+		if(object instanceof Integer){
+			int x = (Integer)object;
+			return (x+"");	
+		}
+		if(object instanceof Long){
+			long x = (Long)object;
+			return (x+"");	
+		}	
+		if(object instanceof String){
+			String x = (String)object;
+			return x;	
+		}
+		if(object instanceof Float){
+			Float x = (Float)object;
+			return (x+"");	
+		}
+		if(object instanceof Double){
+			Double x = (Double)object;
+			return (x+"");	
+		}
+		if(object instanceof Byte){
+			Byte x = (Byte)object;
+			return (x+"");	
+		}				
+		
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(bos);
 		oos.writeObject(object);
@@ -220,4 +267,35 @@ public class CassandraUtils {
 		return cassandraClient;
 	}
 
+	
+	public static void addMutation(Mutation mutation, String key, String family, Map<String, Map<String, List<Mutation>>> mutationMap ){
+		
+		if(mutationMap.containsKey(key)){
+			Map<String, List<Mutation>> mutations_key = mutationMap.get(key);
+			if(mutations_key.containsKey(family)){
+				List<Mutation> mutation_list = mutations_key.get(family);
+				if(mutation_list!=null){
+					mutation_list.add(mutation);
+				}
+				else{
+					mutation_list = new ArrayList<Mutation>();
+					mutation_list.add(mutation);
+					mutations_key.put(family,mutation_list);
+				}
+			}
+			else{
+				List<Mutation> mutation_list = new ArrayList<Mutation>();
+				mutation_list.add(mutation);
+				mutations_key.put(family, mutation_list);
+			}
+		}else{
+			Map<String, List<Mutation>> mutations_key = new TreeMap<String, List<Mutation>>();
+			List<Mutation> mutation_list = new ArrayList<Mutation>();
+			mutation_list.add(mutation);
+			mutations_key.put(family, mutation_list);
+			mutationMap.put(key, mutations_key);
+		}
+		
+		
+	}
 }
