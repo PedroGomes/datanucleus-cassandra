@@ -335,7 +335,6 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
 
 		if (value == null) {
-
 			ExecutionContext context = objectProvider.getExecutionContext();
 			ClassLoaderResolver clr = context.getClassLoaderResolver();
 			AbstractMemberMetaData fieldMetaData = acmd
@@ -514,8 +513,7 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 				return;
 			}
 
-			//normal object;
-			
+			//normal object;			
 			try {
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				ObjectOutputStream oos = new ObjectOutputStream(bos);
@@ -549,9 +547,6 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 			addMutation(mutation, row_key, column_family, mutation_map);	
 		}
 		return mutation_map;
-
 	}
 
-	
-	
 }
