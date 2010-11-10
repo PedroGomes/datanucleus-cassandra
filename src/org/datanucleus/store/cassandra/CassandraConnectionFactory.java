@@ -35,7 +35,6 @@ public class CassandraConnectionFactory extends AbstractConnectionFactory{
 	public CassandraConnectionFactory(OMFContext omfContext, String resourceType) {
 		super(omfContext, resourceType);
 		CassandraStoreManager storeManager = (CassandraStoreManager) omfContext.getStoreManager();
-		//TODO get eviction time
 		connectionPool = new CassandraConnectionPool();
 		connectionInfo = storeManager.getConnectionInfo();
         connectionPool.setTimeBetweenEvictionRunsMillis(storeManager.getPoolTimeBetweenEvictionRunsMillis());
@@ -45,7 +44,7 @@ public class CassandraConnectionFactory extends AbstractConnectionFactory{
 	@Override
 	public ManagedConnection createManagedConnection(Object poolKey, Map arg1) {
 			CassandraStoreManager storeManager = (CassandraStoreManager) omfContext.getStoreManager();
-         
+
 	        CassandraManagedConnection managedConnection = connectionPool.getPooledConnection();
 	        if (managedConnection == null) 
 	        {
@@ -56,7 +55,5 @@ public class CassandraConnectionFactory extends AbstractConnectionFactory{
 	        managedConnection.incrementReferenceCount();
 	        return managedConnection;
 	}
-
-	
 
 }

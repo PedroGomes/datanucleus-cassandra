@@ -57,7 +57,6 @@ public class CassandraConnectionInfo {
 		}
 		
 		
-		String datastore = dataStore_info[0]; // datastore name, ignore
 
 		// get Keyspace
 		if (dataStore_info[1] != null && !dataStore_info[1].isEmpty()) {
