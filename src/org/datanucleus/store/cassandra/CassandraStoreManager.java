@@ -88,7 +88,6 @@ public class CassandraStoreManager extends AbstractStoreManager{
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
 		omfContext.getMetaDataManager().deregisterListener(metadataListener);
 		super.close();
 	}
