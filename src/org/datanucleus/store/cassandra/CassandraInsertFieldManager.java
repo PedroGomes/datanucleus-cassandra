@@ -17,6 +17,7 @@ limitations under the License.
 
 package org.datanucleus.store.cassandra;
 
+import static org.datanucleus.store.cassandra.CassandraUtils.addMutation;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -44,7 +45,10 @@ import org.datanucleus.metadata.MetaDataManager;
 import org.datanucleus.metadata.Relation;
 import org.datanucleus.store.ExecutionContext;
 import org.datanucleus.store.ObjectProvider;
+import org.datanucleus.store.StoreManager;
+import org.datanucleus.store.cassandra.index.IndexHandler;
 import org.datanucleus.store.fieldmanager.AbstractFieldManager;
+import org.datanucleus.store.scostore.Store;
 
 
 //TODO isolate cassandra operations...
@@ -52,38 +56,54 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 	private AbstractClassMetaData acmd;
 	private ObjectProvider objectProvider;
-
+	
 	private List<Mutation> mutations;
 	private Deletion deletion;
 	private String column_family;
 	private String row_key;
 
+	
+	Map<String, List<Mutation>> columnFamily_mutations;
+	Map<String, Map<String, List<Mutation>>> mutation_map;
+
+    //Needs low level operation isolation
 	public CassandraInsertFieldManager(AbstractClassMetaData acmd,
-			ObjectProvider objp, String key, String ColumnFamily) {
+			ObjectProvider objp ,String key, String ColumnFamily) {
+		
 		this.acmd = acmd;
 		this.objectProvider = objp;
 
 		this.mutations = new ArrayList<Mutation>();
 		this.column_family = ColumnFamily;
 		this.row_key = key;
+		
+		columnFamily_mutations = new TreeMap<String, List<Mutation>>();
+		mutation_map = new TreeMap<String, Map<String, List<Mutation>>>();
 	}
 
 	public void storeBooleanField(int fieldNumber, boolean value) {
 		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+	
 		try {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			ObjectOutputStream oos = new ObjectOutputStream(bos);
 			oos.writeBoolean(value);
 			oos.flush();
+			
 			Mutation mutation = new Mutation();
 			ColumnOrSuperColumn columnOrSuperColumn = new ColumnOrSuperColumn();
 			Column column = new Column(columnName.getBytes(),
 					bos.toByteArray(), System.currentTimeMillis());
 			columnOrSuperColumn.setColumn(column);
 			mutation.setColumn_or_supercolumn(columnOrSuperColumn);
+			
 			mutations.add(mutation);
 			oos.close();
 			bos.close();
+		
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+			
 		} catch (IOException e) {
 			throw new NucleusException(e.getMessage(), e);
 		}
@@ -99,6 +119,9 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 		columnOrSuperColumn.setColumn(column);
 		mutation.setColumn_or_supercolumn(columnOrSuperColumn);
 		mutations.add(mutation);
+
+		
+		IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
 
 	}
 
@@ -121,6 +144,10 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 			oos.close();
 			bos.close();
+			
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+
 		} catch (IOException e) {
 			throw new NucleusException(e.getMessage(), e);
 		}
@@ -145,6 +172,10 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 			oos.close();
 			bos.close();
+			
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+
 		} catch (IOException e) {
 			throw new NucleusException(e.getMessage(), e);
 		}
@@ -167,6 +198,9 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 			mutation.setColumn_or_supercolumn(columnOrSuperColumn);
 			mutations.add(mutation);
 
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+			
 			oos.close();
 			bos.close();
 		} catch (IOException e) {
@@ -191,6 +225,9 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 			mutation.setColumn_or_supercolumn(columnOrSuperColumn);
 			mutations.add(mutation);
 
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+			
 			oos.close();
 			bos.close();
 		} catch (IOException e) {
@@ -215,6 +252,9 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 			mutation.setColumn_or_supercolumn(columnOrSuperColumn);
 			mutations.add(mutation);
 
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+			
 			oos.close();
 			bos.close();
 		} catch (IOException e) {
@@ -239,6 +279,9 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 			mutation.setColumn_or_supercolumn(columnOrSuperColumn);
 			mutations.add(mutation);
 
+			IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+
+			
 			oos.close();
 			bos.close();
 		} catch (IOException e) {
@@ -251,6 +294,8 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 		if (value == null) {
 
+			IndexHandler.deleteIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+			
 			if (deletion == null) { // No deletes yet, create a new Deletion.
 				deletion = new Deletion();
 				SlicePredicate predicate = new SlicePredicate();
@@ -276,6 +321,8 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 				mutation.setColumn_or_supercolumn(columnOrSuperColumn);
 				mutations.add(mutation);
 
+				IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, value , mutation_map);
+				
 				oos.close();
 				bos.close();
 			} catch (IOException e) {
@@ -289,6 +336,22 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 		if (value == null) {
 
+			ExecutionContext context = objectProvider.getExecutionContext();
+			ClassLoaderResolver clr = context.getClassLoaderResolver();
+			AbstractMemberMetaData fieldMetaData = acmd
+					.getMetaDataForManagedMemberAtAbsolutePosition(fieldNumber);
+			int relationType = fieldMetaData.getRelationType(clr);
+
+			if (relationType == Relation.ONE_TO_ONE_BI
+					|| relationType == Relation.ONE_TO_ONE_UNI
+					|| relationType == Relation.MANY_TO_ONE_BI) {
+				
+				Object old_value = objectProvider.provideField(fieldNumber);
+				IndexHandler.deleteIndex(fieldMetaData, fieldNumber, objectProvider, row_key,fieldNumber, mutation_map);
+				
+			}			
+			
+			
 			if (deletion == null) { // No deletes yet, create a new Deletion.
 				deletion = new Deletion();
 				SlicePredicate predicate = new SlicePredicate();
@@ -317,6 +380,8 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 
 				Object valueId = context.getApiAdapter().getIdForObject(
 						persisted);
+				
+				IndexHandler.writeIndex(acmd.getMetaDataForManagedMemberAtPosition(fieldNumber),fieldNumber,objectProvider,row_key, valueId , mutation_map);
 
 				try {
 
@@ -344,17 +409,24 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 					|| relationType == Relation.ONE_TO_MANY_BI
 					|| relationType == Relation.ONE_TO_MANY_UNI) {
 
+				ApiAdapter api = context.getApiAdapter();
+				
 				if (value instanceof Collection) {
 
 					List<Object> mapping = new ArrayList<Object>();
 
-					for (Object c : (Collection) value) {	
+					for (Object elem : (Collection) value) {	
 						
-						Object persisted = context.persistObjectInternal(c,
-								objectProvider, -1, StateManager.PC);
-						Object valueId = context.getApiAdapter()
-								.getIdForObject(persisted);
-						mapping.add(valueId);
+						if(api.isPersistable(elem)){
+							Object persisted = context.persistObjectInternal(elem,
+									objectProvider, -1, StateManager.PC);
+							Object valueId = context.getApiAdapter()
+									.getIdForObject(persisted);
+							mapping.add(valueId);
+						}else{
+							
+							mapping.add(elem);
+						}
 					}
 
 					try {
@@ -384,7 +456,7 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 					 Map<Object,Object> mapping = new TreeMap<Object,Object>();
 					 
                      Map map = (Map)value;
-                     ApiAdapter api = context.getApiAdapter();
+                     
                      Set keys = map.keySet();
                      Iterator iter = keys.iterator();
                      while (iter.hasNext())
@@ -416,8 +488,7 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
                         	 key_value = mapValue;
                          }
                          
-                          mapping.put(key, key_value);
-                         
+                          mapping.put(key, key_value);                         
                      }
 
 					try {
@@ -474,14 +545,13 @@ public class CassandraInsertFieldManager extends AbstractFieldManager {
 			mutation.setDeletion(deletion);
 			mutations.add(mutation);
 		}
-
-		Map<String, List<Mutation>> columnFamily_mutations = new TreeMap<String, List<Mutation>>();
-		columnFamily_mutations.put(column_family, mutations);
-		Map<String, Map<String, List<Mutation>>> mutation_map = new TreeMap<String, Map<String, List<Mutation>>>();
-		mutation_map.put(row_key, columnFamily_mutations);
-
+		for(Mutation mutation : mutations){
+			addMutation(mutation, row_key, column_family, mutation_map);	
+		}
 		return mutation_map;
 
 	}
 
+	
+	
 }
