@@ -18,8 +18,10 @@ limitations under the License.
 package org.datanucleus.store.cassandra;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -167,6 +169,15 @@ public class CassandraFetchFieldManager extends AbstractFieldManager {
 		long value;
 		try {
 			byte[] bytes = result_map.get(columnName);
+			if (bytes == null) {
+				System.out.println("byte is null");
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				ObjectOutputStream oos = new ObjectOutputStream(bos);
+				oos.writeLong(0);
+				oos.flush();
+				bytes = bos.toByteArray();
+			}
+
 			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 			ObjectInputStream ois = new ObjectInputStream(bis);
 			value = ois.readLong();
@@ -261,16 +272,16 @@ public class CassandraFetchFieldManager extends AbstractFieldManager {
 
 			MetaDataManager mmgr = context.getMetaDataManager();
 
-
 			if (fieldMetaData.hasCollection()) {
+				String elementClassName = fieldMetaData.getCollection()
+						.getElementType();
 
-				String elementClassName = fieldMetaData.getCollection().getElementType();
-
-				
 				List<Object> mapping = (List<Object>) value;
+
 				Collection<Object> collection = new ArrayList<Object>();
 				for (Object id : mapping) {
 
+					// System.out.println("Object:"+id.toString());
 					Object element = context.findObject(id, true, false,
 							elementClassName);
 					collection.add(element);
@@ -281,14 +292,16 @@ public class CassandraFetchFieldManager extends AbstractFieldManager {
 			else if (fieldMetaData.hasMap()) {
 				// Process all keys, values of the Map that are PC
 
-				String key_elementClassName = fieldMetaData.getMap().getKeyType();
-				String value_elementClassName = fieldMetaData.getMap().getValueType();
-				
+				String key_elementClassName = fieldMetaData.getMap()
+						.getKeyType();
+				String value_elementClassName = fieldMetaData.getMap()
+						.getValueType();
+
 				Map<Object, Object> mapping = new TreeMap<Object, Object>();
 
 				Map map = (Map) value;
 				ApiAdapter api = context.getApiAdapter();
-				
+
 				Set keys = map.keySet();
 				Iterator iter = keys.iterator();
 				while (iter.hasNext()) {
@@ -323,4 +336,52 @@ public class CassandraFetchFieldManager extends AbstractFieldManager {
 
 		return value;
 	}
+
+	public Object fetchField(int fieldNumber, Class c) {
+		if (c == Boolean.class) {
+			return this.fetchBooleanField(fieldNumber);
+
+		}
+		if (c == Byte.class) {
+			return this.fetchByteField(fieldNumber);
+
+		}
+		if (c == Character.class) {
+			return this.fetchCharField(fieldNumber);
+
+		}
+		if (c == Double.class) {
+
+			return this.fetchDoubleField(fieldNumber);
+		}
+		if (c == Float.class) {
+			return this.fetchFloatField(fieldNumber);
+
+		}
+		if (c == Integer.class) {
+			return this.fetchIntField(fieldNumber);
+
+		}
+		if (c == Long.class) {
+			return this.fetchLongField(fieldNumber);
+
+		}
+		if (c == Short.class) {
+			return this.fetchShortField(fieldNumber);
+
+		}
+		if (c == String.class) {
+			return this.fetchStringField(fieldNumber);
+
+		}
+		if (c == Object.class) {
+			return this.fetchObjectField(fieldNumber);
+
+		} else {
+			return null;
+
+		}
+
+	}
+
 }
