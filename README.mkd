@@ -2,7 +2,7 @@
 
 A simple 
 <a href="http://www.datanucleus.org/project/download.html">DataNucleus</a> plugin for
-Java object persistence in <a href="http://cassandra.apache.org/">Cassandra</a>.
+Java object persistence in <a href="http://cassandra.apache.org/">Cassandra</a> 0.6.x. For 0.7.x support check the <a href="https://github.com/tnine/Datanucleus-Cassandra-Plugin">Todd's</a> version.   
 
 # About: 
 
@@ -12,13 +12,13 @@ The current status is as follows:
  
 - It creates a datanucleus.schema every time some element is missing in Cassandra schema, until Cassandra allows dynamic changes to it.
 
-- It works with Cassandra-0.6(.4), under Thrift interface. Data-store code isolation will be improved however, to allow other versions to be used.
-
-- It now supports basic JDOQL queries 
-
-- JPA is not fully functional at the time (work in progress).
+- It works with Cassandra-0.6.x, under Thrift interface. Data-store code isolation will be improved however, to allow other versions to be used.
 
 - Basic schema creation tool(beta). [Schema creation](http://wiki.github.com/PedroGomes/datanucleus-cassandra/wikis/schema-creation)
+
+- It supports multiple indexes on each class, here each can only contain one field. 
+
+- It now supports basic JDOQL queries with support to ranges and searches based on indexed fields. [Usages](http://wiki.github.com/PedroGomes/datanucleus-cassandra/wikis/Usage-examples-)
 
 
 
@@ -44,7 +44,7 @@ Get the JDO sample in Datanucleus at:
 
 Then:
 
-- Alter the JDOQL tests from Main.java, as for now, only simple ranges are supported(read/delete).<br>
+- Alter the JDOQL tests from Main.java, as for now, only simple ranges are supported(read/delete) and searches based on single indexed fields.<br>
 - Define the primary key for each class, as the native strategy is not supported (use for example @PrimaryKey annotations in the classes).<br>
 - In the datanucleus.properties add/edit:
 
