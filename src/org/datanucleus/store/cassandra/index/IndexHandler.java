@@ -64,7 +64,7 @@ public class IndexHandler {
 
 				Deletion deletion = new Deletion(System.currentTimeMillis());
 				SlicePredicate predicate = new SlicePredicate();
-				List<byte[]> column_names = new ArrayList<byte[]>();
+				List<byte[]> column_names = new ArrayList<byte[]>(1);
 				try {
 					column_names.add(columnName.getBytes("UTF8"));
 				} catch (UnsupportedEncodingException e) {
@@ -127,7 +127,7 @@ public class IndexHandler {
 			String columnName = row_key;	
 			Deletion deletion = new Deletion(System.currentTimeMillis());
 			SlicePredicate predicate = new SlicePredicate();
-			List<byte[]> column_names = new ArrayList<byte[]>();
+			List<byte[]> column_names = new ArrayList<byte[]>(1);
 			try {
 				column_names.add(columnName.getBytes("UTF8"));
 			} catch (UnsupportedEncodingException e) {
