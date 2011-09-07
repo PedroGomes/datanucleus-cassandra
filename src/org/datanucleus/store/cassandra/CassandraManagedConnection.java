@@ -1,194 +1,282 @@
 /**********************************************************************
-Copyright (c) 2010 Pedro Gomes and Universidade do Minho. All rights reserved.
-(Based on datanucleus-hbase. Copyright (c) 2009 Tatsuya Kawano and others.)
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+ Copyright (c) 2010 Pedro Gomes and Universidade do Minho. All rights reserved.
+ (Based on datanucleus-hbase. Copyright (c) 2009 Tatsuya Kawano and others.)
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
 
-**********************************************************************/
+ **********************************************************************/
 
 package org.datanucleus.store.cassandra;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.transaction.xa.XAResource;
 
 import org.apache.cassandra.thrift.Cassandra.Client;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.datanucleus.exceptions.NucleusDataStoreException;
 import org.datanucleus.store.connection.AbstractManagedConnection;
 import org.datanucleus.store.connection.ManagedConnectionResourceListener;
 
+import javax.transaction.xa.XAResource;
+import java.util.*;
+
 public class CassandraManagedConnection extends AbstractManagedConnection {
 
-	private CassandraConnectionInfo connectionInfo;
+    private CassandraConnectionInfo connectionInfo;
 
-	private List<Client> cassandraClients;
+    private List<CassandraConnection> cassandraClients;
 
-	private int referenceCount = 0;
+    private int referenceCount = 0;
 
-	private int idleTimeoutMills = 30 * 1000; // 30 secs
+    private int idleTimeoutMills = 30 * 1000; // 30 secs
 
-	private long expirationTime;
+    private long expirationTime;
 
-	private int last_client = 0;
+    private int last_client = 0;
 
-	private boolean isDisposed = false;
+    private boolean isDisposed = false;
 
-	public CassandraManagedConnection(CassandraConnectionInfo info) {
-		connectionInfo = info;
-		disableExpirationTime();
-		cassandraClients = new ArrayList<Client>();
-	}
+    public CassandraManagedConnection(CassandraConnectionInfo info) {
 
-	@Override
-	public void close() {
+        connectionInfo = info;
+        disableExpirationTime();
+        cassandraClients = new LinkedList<CassandraConnection>();
 
-		for (int i = 0; i < listeners.size(); i++) {
-			((ManagedConnectionResourceListener) listeners.get(i))
-					.managedConnectionPreClose();
-		}
-		try {
-//			for (Client client : cassandraClients) {
-//				client.getOutputProtocol().getTransport().close();
-//			}
-		} finally {
-			for (int i = 0; i < listeners.size(); i++) {
-				((ManagedConnectionResourceListener) listeners.get(i))
-						.managedConnectionPostClose();
-			}
-		}
 
-	}
+    }
 
-	@Override
-	public Object getConnection() {
 
-		if (cassandraClients.isEmpty()) {
-			establishNodeConnection(); 
-		}
-		Client client = getCassandraClient();
-		if (client == null) {
-			throw new NucleusDataStoreException("Connection error, no available nodes");
-		}
-		
-		return client;
-	}
+    @Override
+    public void close() {
 
-	private Client getCassandraClient() {
+    }
 
-		boolean openClient = false;
-		Client cl = null;
+    @Override
+    public Object getConnection() {
 
-		while (!openClient) { // until there is no one open
+        if (cassandraClients.isEmpty()) {
+            establishNodeConnection();
+        }
+        Client client = getCassandraClient();
+        if (client == null) {
+            throw new NucleusDataStoreException("Connection error, no available nodes");
+        }
+        return client;
+    }
 
-			if (!cassandraClients.isEmpty()) { // if none, then null...
-				cl = cassandraClients.get(last_client);
-				if (!cl.getInputProtocol().getTransport().isOpen()) {
-					cassandraClients.remove(last_client);
-				} else {
-					openClient = true;
-				}
-				last_client++;
-				last_client = last_client >= cassandraClients.size() ? 0
-						: last_client;
+    private Client getCassandraClient() {
 
-			} else {
-				openClient = true;
-			}
-		}
-		return cl;
+        boolean openClient = false;
 
-	}
-	
-	/**
-	 * Establish connections to all nodes.
-	 * TODO maybe it would be best if connections were made only when necessary, i.e., established in the round robin section.
-	 * Trade-off : N connections vs connection establishment time. 
-	 * */
-	public void establishNodeConnection() {
+        Client cl = null;
 
-		Map<String,Integer> connections = connectionInfo.getConnections();
-		for (String host : connections.keySet()) {
-		  int port = -1;
-          try {
-        	  port = connections.get(host);
-              TSocket socket = new TSocket(host, port);
-              TProtocol prot = new TBinaryProtocol(socket);
-              Client c = new Client(prot);
-              socket.open();
-              cassandraClients.add(c);
-          } catch (TTransportException ex) {
-        	  throw new NucleusDataStoreException("Error when connecting to client: "+
-  					 host+":"+port);
-          }
-      }
-		
-	}
+        while (!openClient) {
 
-	@Override
-	public XAResource getXAResource() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+            CassandraConnection connection = cassandraClients.get(last_client);
 
-	void incrementReferenceCount() {
-		++referenceCount;
-		disableExpirationTime();
-	}
+            if (connection.isOpen()) {
+                cl = connection.getConnection();
+                openClient = true;
+            } else {
+                cassandraClients.remove(last_client);
+            }
+            last_client++;
+            last_client = last_client >= cassandraClients.size() ? 0
+                    : last_client;
 
-	public void release() {
-		--referenceCount;
+        }
 
-		if (referenceCount == 0) {
-			close();
-			enableExpirationTime();
-		} else if (referenceCount < 0) {
-			throw new NucleusDataStoreException("Too many calls on release(): "
-					+ this);
-		}
-	}
+        //try one more time
 
-	private void enableExpirationTime() {
-		this.expirationTime = System.currentTimeMillis() + idleTimeoutMills;
-	}
+        if (!openClient) {
+            establishNodeConnection();
+        }
 
-	private void disableExpirationTime() {
-		this.expirationTime = -1;
-	}
+        CassandraConnection connection = cassandraClients.get(last_client);
 
-	public void setIdleTimeoutMills(int mills) {
-		this.idleTimeoutMills = mills;
-	}
+        if (connection.isOpen()) {
+            cl = connection.getConnection();
+        } else {
+            throw new NucleusDataStoreException("Connection error, no available nodes");
+        }
 
-	public boolean isExpired() {
-		return expirationTime > 0
-				&& expirationTime > System.currentTimeMillis();
-	}
 
-	public void dispose() {
-		isDisposed = true;
-		for (Client client : cassandraClients) {
-			client.getOutputProtocol().getTransport().close();
-		}
-	}
+        if (referenceCount == 0) {
+            throw new NucleusDataStoreException("Fetching client with no reference incrementation: "
+                    + this);
+        }
 
-	public boolean isDisposed() {
-		return isDisposed;
-	}
-	
+        return cl;
+    }
+
+
+    /**
+     * Establish connections to all nodes.
+     * Trade-off : N connections vs connection establishment time.
+     */
+    public void establishNodeConnection() {
+
+        Random random = new Random();
+
+        Map<String, Integer> pre_connections = connectionInfo.getConnections();
+        Map<String, Integer> connections = new TreeMap<String, Integer>();
+
+        int selected_connection = random.nextInt(pre_connections.size());
+        int iterator = 0;
+
+        for (String host : pre_connections.keySet()) {
+            if (iterator == selected_connection) {
+                connections.put(host, pre_connections.get(host));
+                break;
+            }
+            iterator++;
+        }
+
+
+        for (String host : connections.keySet()) {
+
+
+            int port = connections.get(host);
+            CassandraConnection cassandraConnection = new CassandraConnection(host, port);
+            cassandraClients.add(cassandraConnection);
+
+
+            for (int i = 0; i < cassandraClients.size(); i++) {
+                int pos = random.nextInt(cassandraClients.size());
+                CassandraConnection temp = cassandraClients.get(pos);
+                cassandraClients.set(pos, cassandraClients.get(i));
+                cassandraClients.set(i, temp);
+            }
+        }
+
+    }
+
+    @Override
+    public XAResource getXAResource() {
+        return null;
+    }
+
+    void incrementReferenceCount() {
+
+        ++referenceCount;
+        disableExpirationTime();
+    }
+
+    public void release() {
+
+        --referenceCount;
+
+
+        if (referenceCount == 0) {
+            close();
+            enableExpirationTime();
+        } else if (referenceCount < 0) {
+            throw new NucleusDataStoreException("Too many invocations on release(): "
+                    + this);
+        }
+    }
+
+    private void enableExpirationTime() {
+        this.expirationTime = System.currentTimeMillis() + idleTimeoutMills;
+    }
+
+    private void disableExpirationTime() {
+        this.expirationTime = -1;
+    }
+
+    public void setIdleTimeoutMills(int mills) {
+        this.idleTimeoutMills = mills;
+    }
+
+    public boolean isExpired() {
+        return expirationTime > 0
+                && expirationTime < System.currentTimeMillis();
+    }
+
+    public void dispose() {
+
+        isDisposed = true;
+
+        if (referenceCount > 0) {
+            throw new NucleusDataStoreException("Invoking close on a used connection "
+                    + this);
+        }
+
+        for (CassandraConnection client : cassandraClients) {
+            client.close();
+            client = null;
+
+        }
+    }
+
+    public boolean isDisposed() {
+        return isDisposed;
+    }
+
+    @Override
+    public void flush() {
+
+    }
+
+    @Override
+    public void addListener(ManagedConnectionResourceListener listener)
+    {
+
+    }
+
 
 }
+
+class CassandraConnection {
+
+    private final TTransport transport;
+    private final TSocket socket;
+    private final TProtocol protocol;
+    private final Client client;
+
+    CassandraConnection(String host, int port) {
+        try {
+            socket = new TSocket(host, port);
+            protocol = new TBinaryProtocol(socket);
+            transport = socket;
+            client = new Client(protocol);
+            socket.open();
+        } catch (TTransportException ex) {
+            throw new NucleusDataStoreException("Error when connecting to client: " +
+                    host + ":" + port);
+        }
+    }
+
+    public boolean isOpen() {
+        return transport.isOpen();
+    }
+
+    public void close() {
+        try {
+
+            client.getOutputProtocol().getTransport().flush();
+            client.getOutputProtocol().getTransport().close();
+
+        } catch (Exception e) {
+            throw new NucleusDataStoreException("Error when closing client", e);
+        }
+    }
+
+    public Client getConnection() {
+        return client;
+    }
+
+}
+
+
+
