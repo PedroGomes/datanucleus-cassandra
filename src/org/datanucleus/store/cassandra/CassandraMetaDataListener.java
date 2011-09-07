@@ -38,18 +38,7 @@ public class CassandraMetaDataListener implements MetaDataListener{
 	 /** Localiser for messages. */
     protected static final Localiser LOCALISER = Localiser.getInstance(
         "org.datanucleus.store.cassandra.Localisation", CassandraStoreManager.class.getClassLoader());
-	
-    /**Tod code*/
-    
-	private static ConcurrentMap<AbstractMemberMetaData, String> fieldToIndexNames = new ConcurrentHashMap<AbstractMemberMetaData, String>();
-    
-	private static ConcurrentMap<AbstractMemberMetaData, String> fieldToColumnNames = new ConcurrentHashMap<AbstractMemberMetaData, String>();
-	
-	//A null place holder for the cached values
-	private static final String NULL = "\uffff\uffff";
-	
-	/**Tod code*/
-	
+
     private CassandraStoreManager storeManager;
     
     CassandraMetaDataListener(CassandraStoreManager storeManager)
