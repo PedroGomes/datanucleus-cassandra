@@ -31,11 +31,17 @@ import org.datanucleus.exceptions.NucleusDataStoreException;
 
 public class CassandraConnectionInfo {
 
-	private Map<String, Integer> ring_connections;
-	private String keyspace;
+	private static Map<String, Integer> ring_connections;
+	private static String keyspace;
 
+	private static boolean intialized = false;
+	
 	public CassandraConnectionInfo(PersistenceConfiguration conf) {
 
+		if(intialized){
+			return;
+		}
+		
 		ring_connections = new TreeMap<String, Integer>();
 
 		String url = conf.getStringProperty("datanucleus.ConnectionURL");
@@ -168,8 +174,11 @@ public class CassandraConnectionInfo {
 						.describe_ring(keyspace);
 				for (TokenRange tr : ring) {
 					List<String> endpoints = tr.endpoints;
-					for (String enpoint : endpoints) {
-						ring_connections.put(enpoint, endpoint_port);
+					for (String endpoint : endpoints) {
+						if(!ring_connections.containsKey(endpoint)){
+							//System.out.println("New node connection->"+endpoint+":"+endpoint_port);
+							ring_connections.put(endpoint, endpoint_port);
+						}
 					}
 				}
 			} catch (TException e) {
@@ -177,7 +186,7 @@ public class CassandraConnectionInfo {
 			}
 
 		}
-
+		intialized = true;
 	}
 
 	public Map<String, Integer> getConnections() {
