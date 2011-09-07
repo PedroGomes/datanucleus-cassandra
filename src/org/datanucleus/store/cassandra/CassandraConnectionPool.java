@@ -1,31 +1,33 @@
 /**********************************************************************
-Copyright (c) 2010 Pedro Gomes and Universidade do Minho. All rights reserved.
-(Based on datanucleus-hbase. Copyright (c) 2009 Tatsuya Kawano and others.)
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+ Copyright (c) 2010 Pedro Gomes and Universidade do Minho. All rights reserved.
+ (Based on datanucleus-hbase. Copyright (c) 2009 Tatsuya Kawano and others.)
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
 
-**********************************************************************/
+ **********************************************************************/
 
 package org.datanucleus.store.cassandra;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class CassandraConnectionPool
-{
+public class CassandraConnectionPool {
+
+    private ReentrantLock connection_lock = new ReentrantLock();
 
     private final List<CassandraManagedConnection> connections;
 
@@ -33,78 +35,82 @@ public class CassandraConnectionPool
 
     private final Timer evictorThread;
 
+    //private int timeBetweenEvictionRunsMillis = 15 * 1000; // default, 15 secs
     private int timeBetweenEvictionRunsMillis = 15 * 1000; // default, 15 secs
 
-    public CassandraConnectionPool()
-    {
+    public CassandraConnectionPool() {
+
         connectionForCurrentThread = new ThreadLocal<WeakReference<CassandraManagedConnection>>();
         connections = new CopyOnWriteArrayList<CassandraManagedConnection>();
 
-        evictorThread = new Timer("Cassandra Connection Evictor", true);
+        evictorThread = new Timer("Cassandra Connection Eviction Thread", true);
         startConnectionEvictorThread(evictorThread);
+
     }
 
-    public void registerConnection(CassandraManagedConnection managedConnection)
-    {
+    public void registerConnection(CassandraManagedConnection managedConnection) {
+
         connections.add(managedConnection);
         connectionForCurrentThread.set(new WeakReference<CassandraManagedConnection>(managedConnection));
+
     }
 
-    public CassandraManagedConnection getPooledConnection()
-    {
+    public CassandraManagedConnection getPooledConnection() {
         WeakReference<CassandraManagedConnection> ref = connectionForCurrentThread.get();
 
-        if (ref == null)
-        {
+        if (ref == null) {
             return null;
-        }
-        else
-        {
+        } else {
+
             CassandraManagedConnection managedConnection = ref.get();
 
-            if (managedConnection != null && !managedConnection.isDisposed())
-            {
-                return managedConnection;
+            connection_lock.lock();
+
+            try {
+                if (managedConnection != null && !managedConnection.isDisposed()) {
+                    return managedConnection;
+                } else {
+                    return null;
+                }
+
+            } finally {
+                connection_lock.unlock();
             }
-            else
-            {
-                return null;
-            }
+
+
         }
     }
 
-    public void setTimeBetweenEvictionRunsMillis(int timeBetweenEvictionRunsMillis)
-    {
+    public void setTimeBetweenEvictionRunsMillis(int timeBetweenEvictionRunsMillis) {
         this.timeBetweenEvictionRunsMillis = timeBetweenEvictionRunsMillis;
     }
 
-    private void disposeTimedOutConnections()
-    {
-        List<CassandraManagedConnection> timedOutConnections = new ArrayList<CassandraManagedConnection>();
+    private void disposeTimedOutConnections() {
 
-        for (CassandraManagedConnection managedConnection : connections)
-        {
-            if (managedConnection.isExpired())
-            {
+        List<CassandraManagedConnection> timedOutConnections = new LinkedList<CassandraManagedConnection>();
+
+        connection_lock.lock();
+
+
+        for (CassandraManagedConnection managedConnection : connections) {
+            if (managedConnection.isExpired()) {
                 timedOutConnections.add(managedConnection);
+                managedConnection.dispose();
             }
         }
 
-        for (CassandraManagedConnection managedConnection : timedOutConnections)
-        {
-            managedConnection.dispose();
+        connection_lock.unlock();
+
+        for (CassandraManagedConnection managedConnection : timedOutConnections) {
             connections.remove(managedConnection);
         }
 
     }
 
-    private void startConnectionEvictorThread(Timer connectionTimeoutThread)
-    {
-        TimerTask timeoutTask = new TimerTask()
-        {
+    private void startConnectionEvictorThread(Timer connectionTimeoutThread) {
+        TimerTask timeoutTask = new TimerTask() {
 
-            public void run()
-            {
+            public void run() {
                 disposeTimedOutConnections();
             }
         };
