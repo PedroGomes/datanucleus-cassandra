@@ -1,38 +1,24 @@
 /**********************************************************************
-Copyright (c) 2010 Pedro Gomes and Universidade do Minho. All rights reserved.
-(Based on datanucleus-hbase. Copyright (c) 2009 Erik Bengtson and others.)
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+ Copyright (c) 2010 Pedro Gomes and Universidade do Minho. All rights reserved.
+ (Based on datanucleus-hbase. Copyright (c) 2009 Erik Bengtson and others.)
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+ http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
 
  **********************************************************************/
 
 package org.datanucleus.store.cassandra;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
 import org.apache.cassandra.thrift.ColumnOrSuperColumn;
 import org.datanucleus.ClassLoaderResolver;
-import org.datanucleus.StateManager;
 import org.datanucleus.api.ApiAdapter;
 import org.datanucleus.exceptions.NucleusException;
 import org.datanucleus.metadata.AbstractClassMetaData;
@@ -43,345 +29,303 @@ import org.datanucleus.store.ExecutionContext;
 import org.datanucleus.store.ObjectProvider;
 import org.datanucleus.store.fieldmanager.AbstractFieldManager;
 
+import java.util.*;
+
 public class CassandraFetchFieldManager extends AbstractFieldManager {
 
-	private AbstractClassMetaData acmd;
-	private ObjectProvider objectProvider;
+    private AbstractClassMetaData acmd;
+    private ObjectProvider objectProvider;
 
-	private Map<String, byte[]> result_map;
+    private Map<String, byte[]> result_map;
 
-	public CassandraFetchFieldManager(AbstractClassMetaData acmd,
-			ObjectProvider objcp, List<ColumnOrSuperColumn> result) {
-		this.acmd = acmd;
-		this.objectProvider = objcp;
+    public CassandraFetchFieldManager(AbstractClassMetaData acmd,
+                                      ObjectProvider objcp, List<ColumnOrSuperColumn> result) {
+        this.acmd = acmd;
+        this.objectProvider = objcp;
 
-		result_map = new TreeMap<String, byte[]>();
+        result_map = new TreeMap<String, byte[]>();
 
-		for (int index = 0; index < result.size(); index++) {
-			ColumnOrSuperColumn columnOrSuperColumn = result.get(index);
-			String name = new String(columnOrSuperColumn.getColumn().name);
-			result_map.put(name, columnOrSuperColumn.getColumn().value);
-		}
+        for (int index = 0; index < result.size(); index++) {
+            ColumnOrSuperColumn columnOrSuperColumn = result.get(index);
+            String name = new String(columnOrSuperColumn.getColumn().name);
+            result_map.put(name, columnOrSuperColumn.getColumn().value);
+        }
 
-	}
+    }
 
-	public boolean fetchBooleanField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
-		boolean value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readBoolean();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+    public boolean fetchBooleanField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+        Boolean value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Boolean.class, bytes);
 
-	public byte fetchByteField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
-		byte value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readByte();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-	public char fetchCharField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
-		char value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readChar();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+    public byte fetchByteField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+        Byte value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Byte.class, bytes);
 
-	public double fetchDoubleField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
-		double value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readDouble();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-	public float fetchFloatField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+    public char fetchCharField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+        Character value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Character.class, bytes);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-		float value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readFloat();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+    public double fetchDoubleField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+        Double value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Double.class, bytes);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-	public int fetchIntField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+    public float fetchFloatField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
 
-		int value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readInt();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+        Float value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Float.class, bytes);
 
-	public long fetchLongField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-		long value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			if (bytes == null) {
-				System.out.println("byte is null");
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				ObjectOutputStream oos = new ObjectOutputStream(bos);
-				oos.writeLong(0);
-				oos.flush();
-				bytes = bos.toByteArray();
-			}
+    public int fetchIntField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
 
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readLong();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+        int value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Integer.class, bytes);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-	public short fetchShortField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+    public long fetchLongField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
 
-		short value;
-		try {
-			byte[] bytes = result_map.get(columnName);
-			ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-			ObjectInputStream ois = new ObjectInputStream(bis);
-			value = ois.readShort();
-			ois.close();
-			bis.close();
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+        long value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Long.class, bytes);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-	public String fetchStringField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+    public short fetchShortField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
 
-		String value;
-		try {
-			try {
-				byte[] bytes = result_map.get(columnName);
-				ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-				ObjectInputStream ois = new ObjectInputStream(bis);
-				value = (String) ois.readObject();
-				ois.close();
-				bis.close();
-			} catch (NullPointerException ex) {
-				return null;
-			}
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		} catch (ClassNotFoundException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
-		return value;
-	}
+        short value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(Short.class, bytes);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
+        return value;
+    }
 
-	public Object fetchObjectField(int fieldNumber) {
-		String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
-		ExecutionContext context = objectProvider.getExecutionContext();
-		ClassLoaderResolver clr = context.getClassLoaderResolver();
-		AbstractMemberMetaData fieldMetaData = acmd
-				.getMetaDataForManagedMemberAtAbsolutePosition(fieldNumber);
+    public String fetchStringField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
 
-		// get object
-		Object value;
-		try {
-			try {
-				byte[] bytes = result_map.get(columnName);
-				ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-				ObjectInputStream ois = new ObjectInputStream(bis);
-				value = ois.readObject();
-				ois.close();
-				bis.close();
-			} catch (NullPointerException ex) {
-				return null;
-			}
-		} catch (IOException e) {
-			throw new NucleusException(e.getMessage(), e);
-		} catch (ClassNotFoundException e) {
-			throw new NucleusException(e.getMessage(), e);
-		}
+        String value;
+        try {
+            byte[] bytes = result_map.get(columnName);
+            value = ConversionUtils.convertBytes(String.class, bytes);
 
-		// handle relations
-		int relationType = fieldMetaData.getRelationType(clr);
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
 
-		if (relationType == Relation.ONE_TO_ONE_BI
-				|| relationType == Relation.ONE_TO_ONE_UNI
-				|| relationType == Relation.MANY_TO_ONE_BI) {
+        return value;
+    }
 
-			Object id = value;
-			String class_name = fieldMetaData.getClassName();
-			value = context.findObject(id, true, false, class_name);
+    public Object fetchObjectField(int fieldNumber) {
+        String columnName = CassandraUtils.getQualifierName(acmd, fieldNumber);
+        ExecutionContext context = objectProvider.getExecutionContext();
+        ClassLoaderResolver clr = context.getClassLoaderResolver();
+        AbstractMemberMetaData fieldMetaData = acmd
+                .getMetaDataForManagedMemberAtAbsolutePosition(fieldNumber);
+        // get object
+        Object value;
 
-		} else if (relationType == Relation.MANY_TO_MANY_BI
-				|| relationType == Relation.ONE_TO_MANY_BI
-				|| relationType == Relation.ONE_TO_MANY_UNI) {
+        byte[] bytes = result_map.get(columnName);
 
-			MetaDataManager mmgr = context.getMetaDataManager();
+        if (bytes == null) {
+            return null;
+        }
 
-			if (fieldMetaData.hasCollection()) {
-				String elementClassName = fieldMetaData.getCollection()
-						.getElementType();
 
-				List<Object> mapping = (List<Object>) value;
+        try {
 
-				Collection<Object> collection = new ArrayList<Object>();
-				for (Object id : mapping) {
+            value = ConversionUtils.convertBytes(fieldMetaData.getType(), bytes);
 
-					// System.out.println("Object:"+id.toString());
-					Object element = context.findObject(id, true, false,
-							elementClassName);
-					collection.add(element);
-				}
-				value = collection;
-			}
+        } catch (Exception e) {
+            throw new NucleusException(e.getMessage(), e);
+        }
 
-			else if (fieldMetaData.hasMap()) {
-				// Process all keys, values of the Map that are PC
+        // handle relations
+        int relationType = fieldMetaData.getRelationType(clr);
 
-				String key_elementClassName = fieldMetaData.getMap()
-						.getKeyType();
-				String value_elementClassName = fieldMetaData.getMap()
-						.getValueType();
+        if (relationType == Relation.ONE_TO_ONE_BI
+                || relationType == Relation.ONE_TO_ONE_UNI
+                || relationType == Relation.MANY_TO_ONE_BI) {
 
-				Map<Object, Object> mapping = new TreeMap<Object, Object>();
+            Object id = value;
+            String class_name = fieldMetaData.getClassName();
+            value = context.findObject(id, true, false, class_name);
 
-				Map map = (Map) value;
-				ApiAdapter api = context.getApiAdapter();
+        } else if (relationType == Relation.MANY_TO_MANY_BI
+                || relationType == Relation.ONE_TO_MANY_BI
+                || relationType == Relation.ONE_TO_MANY_UNI) {
 
-				Set keys = map.keySet();
-				Iterator iter = keys.iterator();
-				while (iter.hasNext()) {
-					Object mapKey = iter.next();
-					Object key = null;
+            MetaDataManager mmgr = context.getMetaDataManager();
 
-					if (mapKey instanceof javax.jdo.identity.SingleFieldIdentity) {
-						key = context.findObject(mapKey, true, false,
-								key_elementClassName);
+            if (fieldMetaData.hasCollection()) {
+                String elementClassName = fieldMetaData.getCollection()
+                        .getElementType();
 
-					} else {
-						key = mapKey;
-					}
+                List<Object> mapping = (List<Object>) value;
 
-					Object mapValue = map.get(key);
-					Object key_value = null;
+                Collection<Object> collection = new ArrayList<Object>(mapping.size());
+                for (Object id : mapping) {
 
-					if (mapValue instanceof javax.jdo.identity.SingleFieldIdentity) {
+                    // System.out.println("Object:"+id.toString());
+                    Object element = context.findObject(id, true, false,
+                            elementClassName);
+                    collection.add(element);
+                }
 
-						key_value = context.findObject(mapValue, true, false,
-								value_elementClassName);
-					} else {
-						key_value = mapValue;
-					}
+                value = objectProvider.wrapSCOField(fieldNumber, collection,
+                        false, false, true);
+                //value = collection;
+            } else if (fieldMetaData.hasMap()) {
+                // Process all keys, values of the Map that are PC
 
-					mapping.put(key, key_value);
-				}
+                String key_elementClassName = fieldMetaData.getMap()
+                        .getKeyType();
+                String value_elementClassName = fieldMetaData.getMap()
+                        .getValueType();
 
-				value = mapping;
-			}
-		}
+                Map<Object, Object> mapping = new TreeMap<Object, Object>();
 
-		return value;
-	}
+                Map map = (Map) value;
+                ApiAdapter api = context.getApiAdapter();
 
-	public Object fetchField(int fieldNumber, Class c) {
-		if (c == Boolean.class) {
-			return this.fetchBooleanField(fieldNumber);
+                Set keys = map.keySet();
+                Iterator iter = keys.iterator();
+                while (iter.hasNext()) {
+                    Object mapKey = iter.next();
+                    Object key = null;
 
-		}
-		if (c == Byte.class) {
-			return this.fetchByteField(fieldNumber);
+                    if (mapKey instanceof javax.jdo.identity.SingleFieldIdentity) {
+                        key = context.findObject(mapKey, true, false,
+                                key_elementClassName);
 
-		}
-		if (c == Character.class) {
-			return this.fetchCharField(fieldNumber);
+                    } else {
+                        key = mapKey;
+                    }
 
-		}
-		if (c == Double.class) {
+                    Object mapValue = map.get(key);
+                    Object key_value = null;
 
-			return this.fetchDoubleField(fieldNumber);
-		}
-		if (c == Float.class) {
-			return this.fetchFloatField(fieldNumber);
+                    if (mapValue instanceof javax.jdo.identity.SingleFieldIdentity) {
 
-		}
-		if (c == Integer.class) {
-			return this.fetchIntField(fieldNumber);
+                        key_value = context.findObject(mapValue, true, false,
+                                value_elementClassName);
+                    } else {
+                        key_value = mapValue;
+                    }
 
-		}
-		if (c == Long.class) {
-			return this.fetchLongField(fieldNumber);
+                    mapping.put(key, key_value);
+                }
 
-		}
-		if (c == Short.class) {
-			return this.fetchShortField(fieldNumber);
+                //    value = mapping;
 
-		}
-		if (c == String.class) {
-			return this.fetchStringField(fieldNumber);
+                value = objectProvider.wrapSCOField(fieldNumber, mapping, false,
+                        false, true);
+            }
+        }
 
-		}
-		if (c == Object.class) {
-			return this.fetchObjectField(fieldNumber);
+        return value;
+    }
 
-		} else {
-			return null;
+    public Object fetchField(int fieldNumber, Class c) {
+        if (c == Boolean.class) {
+            return this.fetchBooleanField(fieldNumber);
 
-		}
+        }
+        if (c == Byte.class) {
+            return this.fetchByteField(fieldNumber);
 
-	}
+        }
+        if (c == Character.class) {
+            return this.fetchCharField(fieldNumber);
+
+        }
+        if (c == Double.class) {
+
+            return this.fetchDoubleField(fieldNumber);
+        }
+        if (c == Float.class) {
+            return this.fetchFloatField(fieldNumber);
+
+        }
+        if (c == Integer.class) {
+            return this.fetchIntField(fieldNumber);
+
+        }
+        if (c == Long.class) {
+            return this.fetchLongField(fieldNumber);
+
+        }
+        if (c == Short.class) {
+            return this.fetchShortField(fieldNumber);
+
+        }
+        if (c == String.class) {
+            return this.fetchStringField(fieldNumber);
+
+        }
+        if (c == Object.class) {
+            return this.fetchObjectField(fieldNumber);
+
+        } else {
+            return null;
+
+        }
+
+    }
 
 }
