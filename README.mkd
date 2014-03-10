@@ -2,7 +2,10 @@
 
 A simple 
 <a href="http://www.datanucleus.org/project/download.html">DataNucleus</a> plugin for
-Java object persistence in <a href="http://cassandra.apache.org/">Cassandra</a> 0.6.x. For 0.7.x support check<a href="https://github.com/tnine/Datanucleus-Cassandra-Plugin">Todd's</a> version.   
+Java object persistence in <a href="http://cassandra.apache.org/">Cassandra</a> 0.6.x. For 0.7.x support check<a href="https://github.com/tnine/Datanucleus-Cassandra-Plugin">Todd's</a> version.     
+
+This is not currently supported as you may guess, for the official version go to:      
+<a href="https://github.com/datanucleus/datanucleus-cassandra">https://github.com/datanucleus/datanucleus-cassandra  </a>
 
 # About: 
 
